@@ -8,7 +8,7 @@
     "markdown-it": "^10.0.0",
     "markdown-it-anchor": "^5.2.5",
     "markdown-it-link-attributes": "^3.0.0",
-    "prismjs": "^1.21.0",
+    "prismjs": "^1.24.0",
     "prop-types": "^15.7.1",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
