@@ -30,7 +30,10 @@
     "lint:fix": "eslint --fix ./src",
     "optimize:svg": "find ./src/components -name *.svg -exec svgo --config '{ \"plugins\": [ { \"removeDesc\": {\"removeAny\": true} }, { \"removeTitle\": true }, { \"removeViewBox\": false } ] }' {} \\;",
     "prepare": "rm -rf ./dist && npm run build",
-    "prepublishOnly": "git push && git push --tags",
+    "push:tag": "git push && git push --tags",
+    "release:patch": "npm version patch && npm run push:tag",
+    "release:minor": "npm version minor && npm run push:tag",
+    "release:major": "npm version major && npm run push:tag",
     "start": "cd gallery && npm start",
     "test": "npm run lint && npm run jest"
   },

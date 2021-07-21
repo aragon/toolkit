@@ -3,6 +3,11 @@ name: Build and publish
 on:
   push:
     branches: [master]
+    tags:
+      - 'v*.*.*'
+
+env:
+  NODE_VERSION: 12.x
 
 jobs:
 
@@ -12,32 +17,73 @@ jobs:
       CI: true
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
-    - name: Use Node.js 12
-      uses: actions/setup-node@v1
+      uses: actions/checkout@v2
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v2
       with:
-        node-version: 12.x
-    - name: Install, build & test
+        node-version: ${{ env.NODE_VERSION }}
+    - name: Install, build, Test
       run: |
         yarn install --frozen-lockfile
         yarn build
-        yarn test
+    - name: Cache build
+      uses: actions/cache@v2
+      with:
+        path: ./*
+        key: ${{ github.sha }}
+    - name: Test
+      run: yarn test
 
   release:
     needs: [build]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
     - name: Release
+      uses: marvinpinto/action-automatic-releases@v1.2.1
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+
+  publish:
+    needs: [release]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        registry-url: 'https://registry.npmjs.org'
+    - name: Restore build cache
+      uses: actions/cache@v2
+      with:
+        path: ./*
+        key: ${{ github.sha }}
+    - name: Publish
       env:
-        GITHUB_TOKEN: ${{ secrets.MERGE_RELEASE_GITHUB_TOKEN }}
-        NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-      uses: mikeal/merge-release@master
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      run: npm publish
 
   deploy-website:
-    needs: [build]
+    needs: [publish]
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-    - name: Install, build & prepare
+    - name: Use Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+    - name: Restore build cache
+      uses: actions/cache@v2
+      with:
+        path: ./*
+        key: ${{ github.sha }}
+    - name: Install, build & prepare gallery
       run: |
         cd gallery
         yarn --frozen-lockfile
@@ -45,8 +91,7 @@ jobs:
         echo 'ui.aragon.org' > dist/CNAME
         cp public/favicon.svg dist
     - name: Push to gh-pages
-      env:
-        ACTIONS_DEPLOY_KEY: ${{ secrets.GH_PAGES_ACTIONS_DEPLOY_KEY }}
-        PUBLISH_BRANCH: gh-pages
-        PUBLISH_DIR: ./gallery/dist
-      uses: peaceiris/actions-gh-pages@v2
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./gallery/dist

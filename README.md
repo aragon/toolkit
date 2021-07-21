@@ -85,6 +85,18 @@ See `copy-aragon-ui-assets -h` for more information.
 
 Please have a look at [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Release and Publish to npm
+
+Git checkout from master branch and make sure no local changes and run the following commands to make a release and publish to npm
+
+```sh
+# release a patch
+npm run release:patch
+# make a minor release
+npm run release:minor
+# make a major release (with breaking changes)
+npm run release:major
+```
 ## Projects using aragonUI
 
 - [Aragon client](https://github.com/aragon/aragon) and [core apps](https://github.com/aragon/aragon-apps)
